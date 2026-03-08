@@ -4,15 +4,15 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { CircleDot, Dna, Database, ArrowRight, Sparkles, BarChart3, Terminal, Puzzle } from 'lucide-react';
+import { CircleDot, Dna, Database, ArrowRight, Sparkles, BarChart3, Terminal, Puzzle, Cpu, Server, TestTube, Bug, Zap } from 'lucide-react';
 
 export default function Home() {
   const features = [
     {
-      icon: CircleDot,
-      title: 'NBA Statistics',
-      description: 'Comprehensive game-level data from 2010-2024 regular season and playoffs',
-      badge: '24,847 Games'
+      icon: Cpu,
+      title: 'Multi-Language Support',
+      description: 'Python, R, Julia, C/C++, Fortran with seamless interop',
+      badge: '6 Languages'
     },
     {
       icon: Dna,
@@ -21,16 +21,16 @@ export default function Home() {
       badge: '12 Analogies'
     },
     {
-      icon: Terminal,
-      title: 'Local LLM Integration',
-      description: 'Connect to Ollama/LM Studio for AI-powered analysis and translation',
-      badge: 'Privacy First'
+      icon: Zap,
+      title: 'Build & Debug',
+      description: 'Make, CMake, Snakemake with integrated debugging',
+      badge: 'Full Toolchain'
     },
     {
-      icon: Puzzle,
-      title: 'Extension System',
-      description: 'VSCode-like extensibility with custom analysis modules',
-      badge: 'Modular'
+      icon: Server,
+      title: 'HPC & Remote',
+      description: 'Slurm, PBS, cloud GPU integration for large-scale compute',
+      badge: 'Cluster Ready'
     }
   ];
 
@@ -50,12 +50,20 @@ export default function Home() {
             </div>
           </div>
           
-          <Link href="/basketball-ide">
-            <Button className="bg-emerald-600 hover:bg-emerald-700">
-              <Sparkles className="w-4 h-4 mr-2" />
-              Launch IDE
-            </Button>
-          </Link>
+          <div className="flex items-center gap-2">
+            <Link href="/scientific-ide">
+              <Button className="bg-purple-600 hover:bg-purple-700">
+                <Cpu className="w-4 h-4 mr-2" />
+                Scientific IDE
+              </Button>
+            </Link>
+            <Link href="/basketball-ide">
+              <Button className="bg-emerald-600 hover:bg-emerald-700">
+                <Sparkles className="w-4 h-4 mr-2" />
+                Basketball IDE
+              </Button>
+            </Link>
+          </div>
         </div>
       </header>
 
@@ -77,16 +85,19 @@ export default function Home() {
         </p>
         
         <div className="flex items-center justify-center gap-4">
-          <Link href="/basketball-ide">
-            <Button size="lg" className="bg-emerald-600 hover:bg-emerald-700">
-              Open IDE
+          <Link href="/scientific-ide">
+            <Button size="lg" className="bg-purple-600 hover:bg-purple-700">
+              <Cpu className="w-4 h-4 mr-2" />
+              Scientific IDE
               <ArrowRight className="w-4 h-4 ml-2" />
             </Button>
           </Link>
-          <Button size="lg" variant="outline">
-            <Database className="w-4 h-4 mr-2" />
-            Browse Data
-          </Button>
+          <Link href="/basketball-ide">
+            <Button size="lg" variant="outline">
+              <CircleDot className="w-4 h-4 mr-2" />
+              Basketball IDE
+            </Button>
+          </Link>
         </div>
       </section>
 
