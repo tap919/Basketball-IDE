@@ -14,24 +14,17 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Z.ai Code Scaffold - AI-Powered Development",
-  description: "Modern Next.js scaffold optimized for AI-powered development with Z.ai. Built with TypeScript, Tailwind CSS, and shadcn/ui.",
-  keywords: ["Z.ai", "Next.js", "TypeScript", "Tailwind CSS", "shadcn/ui", "AI development", "React"],
-  authors: [{ name: "Z.ai Team" }],
+  title: "Basketball to Biotech IDE | Statistical Translation Platform",
+  description: "An IDE-like platform that translates NBA basketball statistics into biotech research concepts. Powered by local LLMs for privacy-first analysis.",
+  keywords: ["NBA", "basketball", "biotech", "statistics", "IDE", "LLM", "Ollama", "translation", "analytics"],
+  authors: [{ name: "Basketball-Biotech Labs" }],
   icons: {
-    icon: "https://z-cdn.chatglm.cn/z-ai/static/logo.svg",
+    icon: "/favicon.ico",
   },
   openGraph: {
-    title: "Z.ai Code Scaffold",
-    description: "AI-powered development with modern React stack",
-    url: "https://chat.z.ai",
-    siteName: "Z.ai",
+    title: "Basketball to Biotech IDE",
+    description: "Translate sports statistics into biotech research concepts",
     type: "website",
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "Z.ai Code Scaffold",
-    description: "AI-powered development with modern React stack",
   },
 };
 
