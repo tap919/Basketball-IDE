@@ -7,7 +7,8 @@ import {
   ChevronDown, ChevronRight, Play, Search, Moon, Sun,
   BarChart3, Table, GitBranch, Terminal, BookOpen, Code2,
   FlaskConical, Beaker, HelpCircle, GraduationCap, Heart,
-  Award, Sparkles, Rocket, Users, ChevronLeft
+  Award, Sparkles, Rocket, Users, ChevronLeft, Network,
+  Lightbulb, FileText, Trophy
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -22,6 +23,10 @@ import { PipelineTemplate } from '@/lib/pipeline/types';
 import { scienceGlossary, GlossaryBrowser, ConceptCard } from '@/components/citizen-scientist/Explainer';
 import TrustIndicators from '@/components/citizen-scientist/TrustIndicators';
 import GuidedWizard from '@/components/citizen-scientist/GuidedWizard';
+import KnowledgeGraph from '@/components/advanced/KnowledgeGraph';
+import AIDiscoveryPanel from '@/components/advanced/AIDiscoveryPanel';
+import ReportGenerator from '@/components/advanced/ReportGenerator';
+import ResearchHub from '@/components/advanced/ResearchHub';
 
 // Dynamically import heavy components
 const DataGrid = dynamic(() => import('@/components/basketball/DataGrid'), { ssr: false });
@@ -239,11 +244,14 @@ export default function CircleDotIDEPage() {
                   <TabsTrigger value="experiments" className="data-[state=active]:bg-emerald-600/30">
                     <FlaskConical className="w-4 h-4 mr-1" /> Experiments
                   </TabsTrigger>
+                  <TabsTrigger value="discovery" className="data-[state=active]:bg-purple-600/30">
+                    <Lightbulb className="w-4 h-4 mr-1" /> AI Discovery
+                  </TabsTrigger>
+                  <TabsTrigger value="knowledge" className="data-[state=active]:bg-[#21262d]">
+                    <Network className="w-4 h-4 mr-1" /> Knowledge
+                  </TabsTrigger>
                   <TabsTrigger value="data" className="data-[state=active]:bg-[#21262d]">
                     <Table className="w-4 h-4 mr-1" /> Data
-                  </TabsTrigger>
-                  <TabsTrigger value="translation" className="data-[state=active]:bg-[#21262d]">
-                    <Dna className="w-4 h-4 mr-1" /> Translation
                   </TabsTrigger>
                 </TabsList>
               </div>
@@ -337,12 +345,16 @@ export default function CircleDotIDEPage() {
                   </div>
                 </TabsContent>
                 
-                <TabsContent value="data" className="h-full m-0">
-                  <DataGrid season={selectedSeason} theme={theme} />
+                <TabsContent value="discovery" className="h-full m-0">
+                  <AIDiscoveryPanel />
                 </TabsContent>
                 
-                <TabsContent value="translation" className="h-full m-0">
-                  <TranslationPanel theme={theme} />
+                <TabsContent value="knowledge" className="h-full m-0">
+                  <KnowledgeGraph />
+                </TabsContent>
+                
+                <TabsContent value="data" className="h-full m-0">
+                  <DataGrid season={selectedSeason} theme={theme} />
                 </TabsContent>
               </div>
             </Tabs>
@@ -385,6 +397,12 @@ export default function CircleDotIDEPage() {
                         <TabsTrigger value="trust" className="data-[state=active]:bg-[#21262d]">
                           <Award className="w-3 h-3 mr-1" /> Trust
                         </TabsTrigger>
+                        <TabsTrigger value="report" className="data-[state=active]:bg-[#21262d]">
+                          <FileText className="w-3 h-3 mr-1" /> Report
+                        </TabsTrigger>
+                        <TabsTrigger value="hub" className="data-[state=active]:bg-[#21262d]">
+                          <Trophy className="w-3 h-3 mr-1" /> Hub
+                        </TabsTrigger>
                         <TabsTrigger value="learn" className="data-[state=active]:bg-[#21262d]">
                           <GraduationCap className="w-3 h-3 mr-1" /> Learn
                         </TabsTrigger>
@@ -407,6 +425,14 @@ export default function CircleDotIDEPage() {
                           certifications: ['ISO 27001', 'GCP Compliant']
                         }}
                       />
+                    </TabsContent>
+                    
+                    <TabsContent value="report" className="flex-1 m-0">
+                      <ReportGenerator />
+                    </TabsContent>
+                    
+                    <TabsContent value="hub" className="flex-1 m-0">
+                      <ResearchHub />
                     </TabsContent>
                     
                     <TabsContent value="learn" className="flex-1 m-0 overflow-auto p-3">

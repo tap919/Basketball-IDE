@@ -299,3 +299,102 @@ Create medically-significant pipelines focused on curing diseases, understanding
 - Modified: `src/components/ide/LLMChatPanel.tsx`
 
 All code passes ESLint validation and has been pushed to GitHub.
+
+---
+## Task ID: 4 - Citizen Scientist UX & Accessibility
+### Work Task
+Transform the IDE into an accessible platform for citizen scientists while maintaining scientific credibility through calibration indicators, trust scores, and educational resources.
+
+### Work Summary
+
+#### 1. New Components Created
+
+**GuidedWizard.tsx** - Step-by-step experiment wizard
+- Converts complex pipelines into guided workflows
+- Plain language explanations for every step
+- Progress tracking with visual step indicators
+- File upload integration
+- Parameter configuration with help text
+- Results display with interpretation
+
+**FileUpload.tsx** - Drag-and-drop file handling
+- Supports CSV, JSON, VCF, FASTA, PDB, SDF formats
+- Automatic file type detection
+- File preview and column analysis
+- Row count and data statistics
+- Validation with helpful error messages
+- Multiple file support with size limits
+
+**TrustIndicators.tsx** - Scientific credibility display
+- Overall trust score (0-100%)
+- Data Quality score
+- Methodology score
+- Reproducibility score
+- Statistical rigor score
+- Calibration benchmarks
+- Certification badges (ISO 27001, GCP Compliant)
+- Peer review readiness checklist
+
+**Explainer.tsx** - Educational resources
+- Tooltip definitions for scientific terms
+- Full dialog explanations with examples
+- Basketball-to-biotech analogies
+- Searchable glossary browser
+- 10+ pre-defined scientific terms:
+  - Transfection, CRISPR, Biomarker, Efficacy
+  - Half-life, Amyloid, CAR-T, Variant
+  - P-value, Confidence Interval
+
+#### 2. Citizen Types Definition
+
+**citizen-types.ts** includes:
+- UserFile with validation metadata
+- ConfidenceLevel scoring system
+- CalibrationInfo for system trust
+- GuidedStep for wizard flow
+- ExperimentResult with simple summaries
+- TrustIndicators for credibility
+- ScientificValidation documentation
+
+#### 3. Main IDE Redesign
+
+**basketball-ide/page.tsx** updates:
+- Beginner/Intermediate/Advanced mode selector
+- Featured breakthrough experiment card
+- Welcome banner for new users
+- Simplified experiment browser
+- Trust score in status bar
+- Learn tab with glossary
+- Guided wizard integration
+- Clean, accessible navigation
+
+#### 4. Accessibility Features
+
+| Feature | Implementation |
+|---------|---------------|
+| Plain Language | All steps have simple explanations |
+| Visual Progress | Step indicators, progress bars |
+| Help Resources | Tooltips, glossary, examples |
+| Trust Indicators | Confidence scores, calibration badges |
+| Error Prevention | File validation, input constraints |
+| Learning Support | Basketball analogies, concept cards |
+
+#### 5. Scientific Credibility Features
+
+| Feature | Purpose |
+|---------|---------|
+| Confidence Scores | Show reliability of results |
+| Calibration Badges | Prove system accuracy |
+| Methodology Docs | Enable peer review |
+| Limitations Section | Honest about constraints |
+| Certifications | Industry standard compliance |
+
+### Files Created/Modified
+- Created: `src/lib/pipeline/citizen-types.ts`
+- Created: `src/components/citizen-scientist/GuidedWizard.tsx`
+- Created: `src/components/citizen-scientist/FileUpload.tsx`
+- Created: `src/components/citizen-scientist/TrustIndicators.tsx`
+- Created: `src/components/citizen-scientist/Explainer.tsx`
+- Modified: `src/app/basketball-ide/page.tsx`
+
+All code passes ESLint validation and has been pushed to GitHub.
