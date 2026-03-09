@@ -1,11 +1,12 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
 import { 
   CircleDot, Dna, Database, Settings2, FileCode2, 
   ChevronDown, ChevronRight, Play, Search, Moon, Sun,
-  BarChart3, Table, GitBranch, Terminal, BookOpen, Code2
+  BarChart3, Table, GitBranch, Terminal, BookOpen, Code2,
+  FlaskConical, Beaker, Microscope
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -15,6 +16,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import dynamic from 'next/dynamic';
 import 'client-only';
+import { pipelineTemplates, getTemplateById, ExperimentCategory } from '@/lib/pipeline/templates';
 
 // Dynamically import heavy components
 const DataGrid = dynamic(() => import('@/components/basketball/DataGrid'), { ssr: false });
@@ -24,13 +26,16 @@ const LLMChatPanel = dynamic(() => import('@/components/ide/LLMChatPanel'), { ss
 const ExtensionPanel = dynamic(() => import('@/components/ide/ExtensionPanel'), { ssr: false });
 const CodeEditorPanel = dynamic(() => import('@/components/ide/CodeEditorPanel'), { ssr: false });
 const SettingsPanel = dynamic(() => import('@/components/ide/SettingsPanel'), { ssr: false });
+const PipelinePanel = dynamic(() => import('@/components/pipeline/PipelinePanel'), { ssr: false });
 
 export default function CircleDotIDEPage() {
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
-  const [activeTab, setActiveTab] = useState('data');
+  const [activeTab, setActiveTab] = useState('pipeline');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedSeason, setSelectedSeason] = useState<string>('2023-24');
-  const [expandedFolders, setExpandedFolders] = useState<string[]>(['data', 'src']);
+  const [expandedFolders, setExpandedFolders] = useState<string[]>(['data', 'src', 'pipelines']);
+  const [pipelineFilter, setPipelineFilter] = useState<ExperimentCategory | 'all'>('all');
+  const pipelinePanelRef = useRef<{ selectTemplate: (id: string) => void }>(null);
   
   // Sample seasons for dropdown
   const seasons = useMemo(() => {
@@ -49,7 +54,31 @@ export default function CircleDotIDEPage() {
     );
   };
 
+  const handleRunPipeline = (templateId: string) => {
+    setActiveTab('pipeline');
+    // The pipeline panel will need to handle this
+  };
+
+  const handleSelectCategory = (category: string) => {
+    setActiveTab('pipeline');
+    setPipelineFilter(category as ExperimentCategory);
+  };
+
   const sidebarItems = [
+    {
+      id: 'pipelines',
+      label: 'Experiment Pipelines',
+      icon: FlaskConical,
+      children: [
+        ...pipelineTemplates.slice(0, 4).map(t => ({ 
+          id: t.id, 
+          label: t.name, 
+          icon: Beaker,
+          category: t.category
+        })),
+        { id: 'more-pipelines', label: `${pipelineTemplates.length - 4} more...`, icon: ChevronRight }
+      ]
+    },
     {
       id: 'data',
       label: 'Data Sources',
@@ -99,7 +128,7 @@ export default function CircleDotIDEPage() {
             <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <Input 
               className="pl-8 w-64 h-8 text-sm"
-              placeholder="Search stats, teams, concepts..."
+              placeholder="Search experiments, stats, concepts..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -151,10 +180,22 @@ export default function CircleDotIDEPage() {
                     {item.children.map(child => (
                       <button
                         key={child.id}
-                        className={`w-full flex items-center gap-2 px-2 py-1 rounded text-sm ${theme === 'dark' ? 'hover:bg-[#21262d]' : 'hover:bg-gray-100'}`}
+                        className={`w-full flex items-center gap-2 px-2 py-1 rounded text-sm ${theme === 'dark' ? 'hover:bg-[#21262d]' : 'hover:bg-gray-100'} ${
+                          item.id === 'pipelines' ? 'text-emerald-400' : ''
+                        }`}
+                        onClick={() => {
+                          if (item.id === 'pipelines' && child.id !== 'more-pipelines') {
+                            setActiveTab('pipeline');
+                          }
+                        }}
                       >
                         {child.icon ? <child.icon className="w-3 h-3" /> : null}
                         <span className="text-gray-400">{child.label}</span>
+                        {child.category && (
+                          <Badge variant="outline" className="text-[10px] ml-auto">
+                            {child.category}
+                          </Badge>
+                        )}
                       </button>
                     ))}
                   </div>
@@ -165,21 +206,32 @@ export default function CircleDotIDEPage() {
           
           {/* Quick Stats */}
           <div className="mt-4 px-3">
-            <h3 className="text-xs font-semibold text-gray-500 uppercase mb-2">Quick Stats</h3>
+            <h3 className="text-xs font-semibold text-gray-500 uppercase mb-2">Platform Stats</h3>
             <div className="space-y-2">
+              <div className={`p-2 rounded ${theme === 'dark' ? 'bg-[#161b22]' : 'bg-white'}`}>
+                <div className="text-xs text-gray-500">Experiment Pipelines</div>
+                <div className="text-lg font-bold text-emerald-400">{pipelineTemplates.length}</div>
+              </div>
               <div className={`p-2 rounded ${theme === 'dark' ? 'bg-[#161b22]' : 'bg-white'}`}>
                 <div className="text-xs text-gray-500">Total Games</div>
                 <div className="text-lg font-bold">24,847</div>
-              </div>
-              <div className={`p-2 rounded ${theme === 'dark' ? 'bg-[#161b22]' : 'bg-white'}`}>
-                <div className="text-xs text-gray-500">Teams Tracked</div>
-                <div className="text-lg font-bold">30</div>
               </div>
               <div className={`p-2 rounded ${theme === 'dark' ? 'bg-[#161b22]' : 'bg-white'}`}>
                 <div className="text-xs text-gray-500">Biotech Analogies</div>
                 <div className="text-lg font-bold">12</div>
               </div>
             </div>
+          </div>
+          
+          {/* New Experiment Button */}
+          <div className="mt-4 px-3">
+            <Button 
+              className="w-full bg-emerald-600 hover:bg-emerald-700"
+              onClick={() => setActiveTab('pipeline')}
+            >
+              <FlaskConical className="w-4 h-4 mr-2" />
+              New Experiment
+            </Button>
           </div>
         </aside>
         
@@ -189,6 +241,9 @@ export default function CircleDotIDEPage() {
             <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col">
               <div className={`flex items-center justify-between px-4 border-b ${theme === 'dark' ? 'border-[#30363d]' : 'border-gray-200'}`}>
                 <TabsList className="bg-transparent h-10">
+                  <TabsTrigger value="pipeline" className="data-[state=active]:bg-emerald-600/30 data-[state=active]:text-emerald-400">
+                    <FlaskConical className="w-4 h-4 mr-1" /> Pipelines
+                  </TabsTrigger>
                   <TabsTrigger value="data" className="data-[state=active]:bg-[#21262d]">
                     <Table className="w-4 h-4 mr-1" /> Data Grid
                   </TabsTrigger>
@@ -214,6 +269,9 @@ export default function CircleDotIDEPage() {
               </div>
               
               <div className="flex-1 overflow-hidden">
+                <TabsContent value="pipeline" className="h-full m-0">
+                  <PipelinePanel theme={theme} />
+                </TabsContent>
                 <TabsContent value="data" className="h-full m-0">
                   <DataGrid season={selectedSeason} theme={theme} />
                 </TabsContent>
@@ -242,12 +300,16 @@ export default function CircleDotIDEPage() {
                       <span className="text-sm font-medium">LLM Assistant</span>
                     </div>
                     <div className="flex items-center gap-1">
-                      <Badge variant="secondary" className="text-xs">Ollama</Badge>
+                      <Badge variant="secondary" className="text-xs">AI</Badge>
                       <Badge variant="outline" className="text-xs">Local</Badge>
                     </div>
                   </div>
                   <div className="flex-1 overflow-hidden">
-                    <LLMChatPanel theme={theme} />
+                    <LLMChatPanel 
+                      theme={theme} 
+                      onRunPipeline={handleRunPipeline}
+                      onSelectCategory={handleSelectCategory}
+                    />
                   </div>
                 </div>
               </Panel>
@@ -281,7 +343,8 @@ export default function CircleDotIDEPage() {
             Connected
           </span>
           <span>NBA Stats 2010-2024</span>
-          <span>Biotech Translation v1.0</span>
+          <span>{pipelineTemplates.length} Pipelines</span>
+          <span>Biotech Translation v2.0</span>
         </div>
         <div className="flex items-center gap-4">
           <span>TypeScript</span>

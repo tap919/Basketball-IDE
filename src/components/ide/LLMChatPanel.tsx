@@ -7,11 +7,15 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { 
   Send, Bot, User, Loader2, Copy, Check, RefreshCw,
-  Settings, Code, Database, AlertCircle, Wifi, WifiOff
+  Settings, Code, Database, AlertCircle, Wifi, WifiOff,
+  Play, List, Zap, Dna
 } from 'lucide-react';
+import { pipelineTemplates, experimentCategories } from '@/lib/pipeline/templates';
 
 interface LLMChatPanelProps {
   theme: string;
+  onRunPipeline?: (templateId: string) => void;
+  onSelectCategory?: (category: string) => void;
 }
 
 interface Message {
@@ -21,6 +25,9 @@ interface Message {
   timestamp: Date;
   translated?: boolean;
   error?: boolean;
+  hasAction?: boolean;
+  actionType?: 'run-pipeline' | 'show-category';
+  actionData?: string;
 }
 
 interface ChatRequest {
@@ -28,9 +35,12 @@ interface ChatRequest {
   stream?: boolean;
 }
 
-const SYSTEM_PROMPT = `You are an expert at translating basketball statistics into biotech research analogies. 
-Your role is to help researchers understand statistical concepts from sports analytics and map them to 
-pharmaceutical and biotech research contexts.
+const SYSTEM_PROMPT = `You are an expert at translating basketball statistics into biotech research analogies and managing simulation pipelines.
+
+Your role is to help researchers:
+1. Understand statistical concepts from sports analytics and map them to pharmaceutical and biotech research contexts
+2. Navigate and run simulation pipelines for experiments
+3. Interpret results from basketball-to-biotech translations
 
 Key mappings you should know:
 - Field Goal % → Transfection Efficiency
@@ -41,18 +51,27 @@ Key mappings you should know:
 - Plus/Minus → Therapeutic Index
 - Points Per Game → Bioavailability
 
+Available pipeline categories:
+${experimentCategories.map(c => `- ${c.name}: ${c.description}`).join('\n')}
+
+Available pipelines:
+${pipelineTemplates.map(t => `- ${t.name} (${t.category}): ${t.description.slice(0, 80)}...`).join('\n')}
+
+When users want to run a simulation or experiment, suggest the appropriate pipeline and mention they can click the action button to start it.
+
 Always provide:
 1. The biotech equivalent concept
 2. A clear explanation of the analogy
 3. How the statistical measure translates
-4. Potential applications in research`;
+4. Potential applications in research
+5. Relevant pipeline suggestions when appropriate`;
 
-export default function LLMChatPanel({ theme }: LLMChatPanelProps) {
+export default function LLMChatPanel({ theme, onRunPipeline, onSelectCategory }: LLMChatPanelProps) {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
       role: 'system',
-      content: 'Welcome to the Basketball-to-Biotech translation assistant. I can help you translate NBA statistics into biotech research concepts. Try asking me to "translate FG%" or "compare team stats to clinical outcomes".',
+      content: 'Welcome to the Basketball-to-Biotech translation assistant. I can help you:\n\n• Translate NBA statistics into biotech concepts\n• Run simulation pipelines for experiments\n• Navigate experiment categories\n\nTry asking me to "run drug screening" or "translate FG% to biotech".',
       timestamp: new Date()
     }
   ]);
@@ -84,14 +103,46 @@ export default function LLMChatPanel({ theme }: LLMChatPanelProps) {
     }
   }, [messages]);
 
+  // Parse user input for pipeline commands
+  const parsePipelineCommand = (input: string): { templateId: string | null; categoryName: string | null } => {
+    const lowerInput = input.toLowerCase();
+    
+    // Check for pipeline run commands
+    if (lowerInput.includes('run') || lowerInput.includes('start') || lowerInput.includes('execute') || lowerInput.includes('simulate')) {
+      for (const template of pipelineTemplates) {
+        if (lowerInput.includes(template.name.toLowerCase()) || 
+            lowerInput.includes(template.category.toLowerCase()) ||
+            lowerInput.includes(template.id.toLowerCase())) {
+          return { templateId: template.id, categoryName: null };
+        }
+      }
+      
+      // Check for category mentions
+      for (const category of experimentCategories) {
+        if (lowerInput.includes(category.name.toLowerCase()) || 
+            lowerInput.includes(category.id.toLowerCase())) {
+          return { templateId: null, categoryName: category.id };
+        }
+      }
+    }
+    
+    return { templateId: null, categoryName: null };
+  };
+
   const handleSend = async () => {
     if (!input.trim() || isLoading) return;
+
+    // Check for pipeline commands
+    const { templateId, categoryName } = parsePipelineCommand(input);
 
     const userMessage: Message = {
       id: Date.now().toString(),
       role: 'user',
       content: input,
-      timestamp: new Date()
+      timestamp: new Date(),
+      hasAction: !!templateId || !!categoryName,
+      actionType: templateId ? 'run-pipeline' : categoryName ? 'show-category' : undefined,
+      actionData: templateId || categoryName || undefined
     };
 
     setMessages(prev => [...prev, userMessage]);
@@ -99,13 +150,12 @@ export default function LLMChatPanel({ theme }: LLMChatPanelProps) {
     setIsLoading(true);
 
     try {
-      // Build message history for context (last 10 messages for efficiency)
+      // Build message history for context
       const conversationHistory = messages
-        .filter(m => m.role !== 'system' || m.id === '1') // Keep only the welcome system message
+        .filter(m => m.role !== 'system' || m.id === '1')
         .slice(-10)
         .map(m => ({ role: m.role === 'system' ? 'user' : m.role, content: m.content }));
       
-      // Add the new user message
       conversationHistory.push({ role: 'user', content: input });
 
       const response = await fetch('/api/llm/chat', {
@@ -123,11 +173,28 @@ export default function LLMChatPanel({ theme }: LLMChatPanelProps) {
 
       const data = await response.json();
       
+      // If there's a pipeline action, append action instructions
+      let content = data.content || 'I apologize, but I was unable to generate a response.';
+      if (templateId) {
+        const template = pipelineTemplates.find(t => t.id === templateId);
+        if (template) {
+          content += `\n\n---\n\n🎯 **Ready to run: ${template.name}**\n\nClick the action button below to start this pipeline.`;
+        }
+      } else if (categoryName) {
+        const category = experimentCategories.find(c => c.id === categoryName);
+        if (category) {
+          content += `\n\n---\n\n📂 **Category: ${category.name}**\n\nClick the action button to filter pipelines by this category.`;
+        }
+      }
+
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: data.content || 'I apologize, but I was unable to generate a response.',
-        timestamp: new Date()
+        content,
+        timestamp: new Date(),
+        hasAction: !!templateId || !!categoryName,
+        actionType: templateId ? 'run-pipeline' : categoryName ? 'show-category' : undefined,
+        actionData: templateId || categoryName || undefined
       };
 
       setMessages(prev => [...prev, assistantMessage]);
@@ -156,12 +223,9 @@ export default function LLMChatPanel({ theme }: LLMChatPanelProps) {
   };
 
   const handleRegenerate = async () => {
-    // Find the last user message
     const lastUserMessage = [...messages].reverse().find(m => m.role === 'user');
     if (lastUserMessage && !isLoading) {
-      // Remove the last assistant message
       setMessages(prev => prev.slice(0, -1));
-      // Re-send the last user message
       setInput(lastUserMessage.content);
       setTimeout(() => {
         handleSend();
@@ -174,10 +238,18 @@ export default function LLMChatPanel({ theme }: LLMChatPanelProps) {
       {
         id: Date.now().toString(),
         role: 'system',
-        content: 'Conversation cleared. How can I help you with basketball-to-biotech translations?',
+        content: 'Conversation cleared. How can I help you with basketball-to-biotech translations or run a simulation?',
         timestamp: new Date()
       }
     ]);
+  };
+
+  const handleActionClick = (message: Message) => {
+    if (message.actionType === 'run-pipeline' && message.actionData && onRunPipeline) {
+      onRunPipeline(message.actionData);
+    } else if (message.actionType === 'show-category' && message.actionData && onSelectCategory) {
+      onSelectCategory(message.actionData);
+    }
   };
 
   return (
@@ -256,7 +328,6 @@ export default function LLMChatPanel({ theme }: LLMChatPanelProps) {
                 <div className="text-sm whitespace-pre-wrap prose prose-invert prose-sm max-w-none">
                   {message.content.split('```').map((part, i) => {
                     if (i % 2 === 1) {
-                      // Code block
                       return (
                         <pre key={i} className="bg-[#0d1117] p-2 rounded text-xs overflow-x-auto my-2">
                           <code>{part}</code>
@@ -266,6 +337,29 @@ export default function LLMChatPanel({ theme }: LLMChatPanelProps) {
                     return <span key={i}>{part}</span>;
                   })}
                 </div>
+                
+                {/* Action Button */}
+                {message.hasAction && message.actionData && (
+                  <div className="mt-3 pt-2 border-t border-[#30363d]">
+                    <Button 
+                      size="sm" 
+                      className="w-full bg-emerald-600 hover:bg-emerald-700"
+                      onClick={() => handleActionClick(message)}
+                    >
+                      {message.actionType === 'run-pipeline' ? (
+                        <>
+                          <Play className="w-3 h-3 mr-1" />
+                          Run Pipeline
+                        </>
+                      ) : (
+                        <>
+                          <List className="w-3 h-3 mr-1" />
+                          Show Category
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                )}
                 
                 <div className="text-xs text-gray-500 mt-2">
                   {message.timestamp.toLocaleTimeString()}
@@ -294,6 +388,48 @@ export default function LLMChatPanel({ theme }: LLMChatPanelProps) {
         </div>
       </ScrollArea>
       
+      {/* Quick Actions */}
+      <div className="px-3 py-2 border-t border-[#30363d]">
+        <div className="flex gap-1 flex-wrap mb-2">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="h-7 text-xs"
+            onClick={() => {
+              setInput('run drug screening simulation');
+              setTimeout(handleSend, 100);
+            }}
+          >
+            <Zap className="w-3 h-3 mr-1" />
+            Drug Screening
+          </Button>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="h-7 text-xs"
+            onClick={() => {
+              setInput('run clinical trial design');
+              setTimeout(handleSend, 100);
+            }}
+          >
+            <Dna className="w-3 h-3 mr-1" />
+            Clinical Trial
+          </Button>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="h-7 text-xs"
+            onClick={() => {
+              setInput('translate FG% to biotech equivalent');
+              setTimeout(handleSend, 100);
+            }}
+          >
+            <Code className="w-3 h-3 mr-1" />
+            Translate FG%
+          </Button>
+        </div>
+      </div>
+      
       {/* Input Area */}
       <div className="p-2 border-t border-[#30363d]">
         <form 
@@ -304,7 +440,7 @@ export default function LLMChatPanel({ theme }: LLMChatPanelProps) {
             ref={inputRef}
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Ask about basketball-to-biotech translation..."
+            placeholder="Ask about basketball-to-biotech translation or run a pipeline..."
             className="flex-1 h-9"
             disabled={isLoading}
           />
