@@ -87,3 +87,96 @@ User Interface
 ```
 
 All endpoints and components have been tested and the linter passes without errors.
+
+---
+## Task ID: 2 - Simulation & Experiment Pipeline System
+### Work Task
+Create a pipelined system for conducting simulations and experiments that starts from a menu and LLM chat interface, translating basketball statistics into biotech research outcomes.
+
+### Work Summary
+
+#### 1. Pipeline Types & Templates (`/src/lib/pipeline/`)
+
+**a) types.ts**
+- Defined `PipelineStatus`, `StepStatus`, `PipelineStep`, `PipelineTemplate`, `PipelineInstance`, `PipelineResult`
+- Each step includes basketball analogy and biotech translation fields
+- Results include both basketball stats and their biotech equivalents
+
+**b) templates.ts**
+- Created 6 comprehensive experiment templates:
+  1. **High-Throughput Drug Screening** - FG% → Transfection Efficiency mapping
+  2. **Adaptive Clinical Trial Design** - Game strategy → Trial adaptation rules
+  3. **Variant Effect Analysis** - Lineup optimization → Gene interaction networks
+  4. **Protein Stability Engineering** - Free throw consistency → Folding stability
+  5. **Pharmacokinetic Modeling** - Player stamina → Drug concentration profiles
+  6. **RNA-Seq Differential Expression** - Player comparisons → Gene expression
+  7. **Biomarker Discovery Pipeline** - Clutch performance → Diagnostic accuracy
+- Each template has: steps, parameters, difficulty level, estimated duration
+- 7 experiment categories with icons and descriptions
+
+#### 2. Pipeline Components (`/src/components/pipeline/`)
+
+**a) PipelineMenu.tsx**
+- Search and filter functionality for templates
+- Category filter pills for quick filtering
+- Template cards with difficulty badges and duration estimates
+- Quick stats showing total templates, categories, and steps
+
+**b) PipelineRunner.tsx**
+- Step-by-step execution workflow with progress tracking
+- Parameter configuration panel with biotech equivalents
+- Real-time log output with basketball/biotech context
+- Results panel with translation mappings and recommendations
+- Play/Pause/Reset controls for pipeline execution
+
+**c) PipelinePanel.tsx**
+- Container that switches between Menu and Runner views
+- Handles template selection and pipeline completion callbacks
+
+#### 3. API Endpoints
+
+**`/api/pipeline/route.ts`**
+- GET: List all templates or get specific template by ID
+- POST with action='validate': Validate pipeline parameters
+- POST with action='simulate': Use LLM to generate simulation results
+- Returns basketball-to-biotech translation results
+
+#### 4. Enhanced LLM Chat (`/src/components/ide/LLMChatPanel.tsx`)
+
+- Added pipeline command parsing (run/start/execute/simulate keywords)
+- Quick action buttons for common pipelines (Drug Screening, Clinical Trial)
+- Action buttons in messages to directly run pipelines from chat
+- Pipeline suggestions based on user queries
+- Category filtering from chat commands
+
+#### 5. Updated Basketball IDE Page (`/src/app/basketball-ide/page.tsx`)
+
+- Added Pipelines as default tab with FlaskConical icon
+- Sidebar now shows experiment pipelines with categories
+- "New Experiment" button in sidebar
+- Pipeline tab shows PipelinePanel component
+- LLM chat integrates with pipeline selection
+
+### Key Basketball-to-Biotech Translations in Pipelines
+
+| Basketball Concept | Biotech Equivalent | Pipeline Application |
+|-------------------|-------------------|---------------------|
+| FG% (shooting accuracy) | Transfection Efficiency | Drug screening hit rates |
+| Game Strategy | Trial Adaptation Rules | Clinical trial design |
+| Lineup Optimization | Gene Interaction Networks | Genomics analysis |
+| Free Throw Consistency | Folding Stability | Protein engineering |
+| Player Stamina Curves | Drug Concentration Profiles | Pharmacokinetics |
+| Player Comparisons | Gene Expression Differences | RNA-Seq analysis |
+| Clutch Performance | Diagnostic Accuracy | Biomarker discovery |
+
+### Files Created/Modified
+- Created: `src/lib/pipeline/types.ts`
+- Created: `src/lib/pipeline/templates.ts`
+- Created: `src/components/pipeline/PipelineMenu.tsx`
+- Created: `src/components/pipeline/PipelineRunner.tsx`
+- Created: `src/components/pipeline/PipelinePanel.tsx`
+- Created: `src/app/api/pipeline/route.ts`
+- Modified: `src/components/ide/LLMChatPanel.tsx`
+- Modified: `src/app/basketball-ide/page.tsx`
+
+All code passes ESLint validation and has been pushed to GitHub.

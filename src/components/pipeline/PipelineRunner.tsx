@@ -12,7 +12,8 @@ import { Separator } from '@/components/ui/separator';
 import {
   Play, Pause, Square, RotateCcw, CheckCircle2, Circle, Loader2, 
   AlertCircle, ChevronDown, ChevronRight, ArrowRight, Clock,
-  Basketball, Dna, Zap, TrendingUp, BarChart3, Terminal
+  Basketball, Dna, Zap, TrendingUp, BarChart3, Terminal, Award,
+  Target, Heart, Brain, Bug, Sparkles, Activity, Rocket
 } from 'lucide-react';
 import { 
   PipelineTemplate, 
@@ -23,6 +24,7 @@ import {
   StepStatus,
   PipelineResult
 } from '@/lib/pipeline/types';
+import { getBreakthroughPotential } from '@/lib/pipeline/templates';
 
 interface PipelineRunnerProps {
   theme: string;
@@ -47,6 +49,16 @@ const stepStatusColors: Record<StepStatus, string> = {
   skipped: 'text-gray-600'
 };
 
+const categoryIcons: Record<string, React.ComponentType<{ className?: string }>> = {
+  'disease-cure': Heart,
+  'virus-mutation': Bug,
+  'gene-therapy': Dna,
+  'physiology-modeling': Activity,
+  'cancer-research': Target,
+  'neurodegenerative': Brain,
+  'rare-disease': Sparkles
+};
+
 export default function PipelineRunner({ theme, template, onBack, onPipelineComplete }: PipelineRunnerProps) {
   const [instance, setInstance] = useState<PipelineInstance | null>(null);
   const [parameters, setParameters] = useState<Record<string, unknown>>({});
@@ -57,14 +69,12 @@ export default function PipelineRunner({ theme, template, onBack, onPipelineComp
   // Initialize instance when template changes
   useEffect(() => {
     if (template) {
-      // Set default parameters
       const defaultParams: Record<string, unknown> = {};
       template.parameters.forEach(param => {
         defaultParams[param.name] = param.defaultValue;
       });
       setParameters(defaultParams);
 
-      // Create instance
       const newInstance: PipelineInstance = {
         id: `pipeline-${Date.now()}`,
         templateId: template.id,
@@ -95,19 +105,21 @@ export default function PipelineRunner({ theme, template, onBack, onPipelineComp
     setLogs(prev => [...prev, { timestamp: new Date(), level, message, stepId }]);
   }, []);
 
-  // Simulate pipeline execution
+  // Simulate pipeline execution with medical context
   const runPipeline = async () => {
     if (!instance || !template) return;
     
     setIsRunning(true);
     setInstance(prev => prev ? { ...prev, status: 'running' } : null);
-    addLog('info', `Starting pipeline: ${template.name}`);
-    addLog('info', `Basketball Context: ${template.basketballContext}`);
+    
+    const breakthrough = getBreakthroughPotential(template.id);
+    addLog('info', `🚀 Starting pipeline: ${template.name}`);
+    addLog('info', `🎯 Goal: ${breakthrough.breakthrough}`);
+    addLog('info', `🏀 Basketball Context: ${template.basketballContext.slice(0, 100)}...`);
 
     for (let i = 0; i < instance.steps.length; i++) {
       const step = instance.steps[i];
       
-      // Update step to running
       setInstance(prev => {
         if (!prev) return null;
         const newSteps = [...prev.steps];
@@ -115,7 +127,8 @@ export default function PipelineRunner({ theme, template, onBack, onPipelineComp
         return { ...prev, steps: newSteps, progress: (i / prev.steps.length) * 100 };
       });
       
-      addLog('info', `Step ${i + 1}: ${step.name}`, step.id);
+      addLog('info', `━━━ Step ${i + 1}/${instance.steps.length}: ${step.name} ━━━`, step.id);
+      
       if (step.basketballAnalogy) {
         addLog('info', `🏀 ${step.basketballAnalogy}`, step.id);
       }
@@ -124,8 +137,8 @@ export default function PipelineRunner({ theme, template, onBack, onPipelineComp
       }
 
       // Simulate step execution with progress
-      for (let p = 0; p <= 100; p += 20) {
-        await new Promise(resolve => setTimeout(resolve, 200));
+      for (let p = 0; p <= 100; p += 25) {
+        await new Promise(resolve => setTimeout(resolve, 150));
         setInstance(prev => {
           if (!prev) return null;
           const newSteps = [...prev.steps];
@@ -134,7 +147,6 @@ export default function PipelineRunner({ theme, template, onBack, onPipelineComp
         });
       }
 
-      // Complete step
       setInstance(prev => {
         if (!prev) return null;
         const newSteps = [...prev.steps];
@@ -148,39 +160,12 @@ export default function PipelineRunner({ theme, template, onBack, onPipelineComp
         return { ...prev, steps: newSteps };
       });
       
-      addLog('success', `✓ Step ${i + 1} completed`, step.id);
+      addLog('success', `✅ Step ${i + 1} completed`, step.id);
     }
 
-    // Generate results
-    const results: PipelineResult = {
-      summary: `Pipeline "${template.name}" completed successfully with all ${template.steps.length} steps.`,
-      metrics: {
-        duration: 180,
-        efficiency: 0.95,
-        accuracy: 0.92
-      },
-      basketballStats: {
-        FG_PCT: 47.2,
-        AST: 25.6,
-        REB: 42.1,
-        TOV: 12.3,
-        PLUS_MINUS: 8.5
-      },
-      biotechEquivalents: {
-        transfectionEfficiency: 47.2,
-        synergyIndex: 25.6,
-        recaptureRate: 42.1,
-        adverseEvents: 12.3,
-        therapeuticIndex: 8.5
-      },
-      interpretation: 'The simulation demonstrates strong correlation between basketball performance metrics and biotech research outcomes. High transfection efficiency (FG%) indicates effective gene delivery, while the positive therapeutic index (+/-) suggests favorable safety profile.',
-      recommendations: [
-        'Consider optimizing synergy indicators (assists) for improved combination therapies',
-        'Monitor adverse events (turnovers) closely during clinical phases',
-        'Leverage strong recapture rates (rebounds) for recycling strategies'
-      ]
-    };
-
+    // Generate medically-relevant results
+    const results: PipelineResult = generateMedicalResults(template, parameters);
+    
     setInstance(prev => prev ? { 
       ...prev, 
       status: 'completed', 
@@ -189,7 +174,12 @@ export default function PipelineRunner({ theme, template, onBack, onPipelineComp
       results 
     } : null);
     
-    addLog('success', 'Pipeline completed successfully!');
+    addLog('success', '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    addLog('success', '🎉 PIPELINE COMPLETED SUCCESSFULLY!');
+    addLog('success', `💡 ${breakthrough.breakthrough}`);
+    addLog('info', `📊 Impact: ${breakthrough.impact}`);
+    addLog('info', `⏱️ Timeline: ${breakthrough.timeline}`);
+    
     setIsRunning(false);
     
     if (onPipelineComplete) {
@@ -197,9 +187,145 @@ export default function PipelineRunner({ theme, template, onBack, onPipelineComp
     }
   };
 
+  // Generate medically-relevant simulation results
+  const generateMedicalResults = (template: PipelineTemplate, params: Record<string, unknown>): PipelineResult => {
+    const baseResults: PipelineResult = {
+      summary: `Pipeline "${template.name}" completed successfully. Analysis indicates strong potential for therapeutic intervention.`,
+      metrics: {
+        efficacy: 0.85 + Math.random() * 0.1,
+        safety: 0.92 + Math.random() * 0.05,
+        probability: 0.75 + Math.random() * 0.15,
+        confidence: 0.88 + Math.random() * 0.08
+      },
+      basketballStats: {
+        FG_PCT: 45 + Math.random() * 10,
+        AST: 22 + Math.random() * 8,
+        REB: 40 + Math.random() * 10,
+        TOV: 10 + Math.random() * 5,
+        PLUS_MINUS: 6 + Math.random() * 8
+      },
+      biotechEquivalents: {
+        therapeuticEfficiency: 0,
+        synergyIndex: 0,
+        recaptureRate: 0,
+        adverseRisk: 0,
+        therapeuticIndex: 0
+      },
+      interpretation: '',
+      recommendations: []
+    };
+
+    // Calculate biotech equivalents from basketball stats
+    baseResults.biotechEquivalents = {
+      therapeuticEfficiency: baseResults.basketballStats.FG_PCT,
+      synergyIndex: baseResults.basketballStats.AST,
+      recaptureRate: baseResults.basketballStats.REB,
+      adverseRisk: baseResults.basketballStats.TOV,
+      therapeuticIndex: baseResults.basketballStats.PLUS_MINUS
+    };
+
+    // Template-specific results
+    switch (template.id) {
+      case 'alzheimer-reversal':
+        baseResults.summary = 'Multi-target Alzheimer\'s therapy combination identified with predicted 40% cognitive improvement.';
+        baseResults.metrics = { 
+          ...baseResults.metrics,
+          amyloidClearance: 65 + Math.random() * 20,
+          tauReduction: 45 + Math.random() * 15,
+          cognitiveImprovement: 35 + Math.random() * 15
+        };
+        baseResults.interpretation = 'The optimized drug combination shows strong potential for amyloid clearance while simultaneously reducing tau tangles. The blood-brain barrier penetration analysis indicates therapeutic concentrations achievable in the hippocampus and cortex.';
+        baseResults.recommendations = [
+          'Proceed to Phase II clinical trial with identified combination therapy',
+          'Monitor CSF biomarkers for amyloid-beta and tau reduction',
+          'Consider patient stratification based on APOE4 status',
+          'Establish cognitive assessment endpoints using ADAS-Cog and CDR-SB'
+        ];
+        break;
+        
+      case 'cancer-immunotherapy':
+        baseResults.summary = 'CAR-T construct optimized for solid tumor infiltration with predicted 75% response rate.';
+        baseResults.metrics = {
+          ...baseResults.metrics,
+          tumorInfiltration: 70 + Math.random() * 20,
+          exhaustionResistance: 80 + Math.random() * 15,
+          tumorKillRate: 85 + Math.random() * 10
+        };
+        baseResults.interpretation = 'The engineered CAR-T cells demonstrate enhanced tumor infiltration capability through chemokine receptor matching. Exhaustion-resistant modifications including PD-1 knockout show sustained cytotoxic activity over 30+ days in simulation.';
+        baseResults.recommendations = [
+          'Proceed to IND-enabling studies with optimized CAR construct',
+          'Implement safety switch (iCasp9) for CRS management',
+          'Design basket trial across multiple solid tumor types',
+          'Monitor cytokine profiles for CRS prediction'
+        ];
+        break;
+        
+      case 'universal-vaccine':
+        baseResults.summary = 'Conserved epitopes identified across viral family with 95% coverage of known variants.';
+        baseResults.metrics = {
+          ...baseResults.metrics,
+          conservationScore: 92 + Math.random() * 6,
+          neutralizingAntibodyTiter: 8.5 + Math.random() * 2,
+          breadthOfProtection: 88 + Math.random() * 10
+        };
+        baseResults.interpretation = 'Structural analysis identified 4 highly conserved epitopes with <0.1% mutation rate across 10,000+ viral sequences. The designed immunogen elicits broadly neutralizing antibodies with predicted cross-reactivity against future variants.';
+        baseResults.recommendations = [
+          'Advance immunogen to Phase I clinical trial',
+          'Establish correlates of protection for regulatory pathway',
+          'Design universal vaccine manufacturing platform',
+          'Monitor emerging variants for continued coverage'
+        ];
+        break;
+        
+      case 'crispr-cure-design':
+        baseResults.summary = 'CRISPR gene editing protocol designed with >90% on-target efficiency and <0.01% off-target risk.';
+        baseResults.metrics = {
+          ...baseResults.metrics,
+          onTargetEfficiency: 88 + Math.random() * 10,
+          offTargetRisk: 0.005 + Math.random() * 0.005,
+          editingPersistence: 95 + Math.random() * 4
+        };
+        baseResults.interpretation = 'The designed guide RNA achieves exceptional on-target efficiency with minimal off-target sites. Prime editing approach eliminates double-strand break risk. Delivery optimization indicates >80% transduction of target cells.';
+        baseResults.recommendations = [
+          'Proceed to IND submission with preclinical safety data',
+          'Design natural history study for endpoint selection',
+          'Establish manufacturing process for GMP production',
+          'Consider patient eligibility based on genotype'
+        ];
+        break;
+        
+      case 'digital-twin-therapy':
+        baseResults.summary = 'Digital twin model predicts optimal personalized treatment regimen with 92% accuracy.';
+        baseResults.metrics = {
+          ...baseResults.metrics,
+          modelAccuracy: 90 + Math.random() * 8,
+          predictionConfidence: 85 + Math.random() * 10,
+          outcomeImprovement: 40 + Math.random() * 20
+        };
+        baseResults.interpretation = 'The multi-scale physiological model successfully predicts drug response based on patient-specific parameters. Simulation indicates 40% improvement in treatment outcomes compared to standard of care.';
+        baseResults.recommendations = [
+          'Implement digital twin in clinical decision support system',
+          'Validate predictions against historical patient data',
+          'Design prospective clinical trial comparing twin-guided vs standard care',
+          'Establish real-time data integration pipeline'
+        ];
+        break;
+        
+      default:
+        baseResults.interpretation = 'The pipeline analysis indicates significant therapeutic potential. Further investigation and clinical validation recommended.';
+        baseResults.recommendations = [
+          'Review detailed results with clinical team',
+          'Plan next-phase experiments based on findings',
+          'Consider publication of methodology and preliminary results'
+        ];
+    }
+
+    return baseResults;
+  };
+
   const pausePipeline = () => {
     setInstance(prev => prev ? { ...prev, status: 'paused' } : null);
-    addLog('warning', 'Pipeline paused');
+    addLog('warning', '⏸️ Pipeline paused');
     setIsRunning(false);
   };
 
@@ -229,12 +355,16 @@ export default function PipelineRunner({ theme, template, onBack, onPipelineComp
     return (
       <div className="h-full flex items-center justify-center text-gray-500">
         <div className="text-center">
-          <Dna className="w-12 h-12 mx-auto mb-3 opacity-50" />
-          <p>Select an experiment template to begin</p>
+          <Rocket className="w-12 h-12 mx-auto mb-3 opacity-50" />
+          <p>Select an experiment pipeline to begin</p>
+          <p className="text-xs mt-2 text-emerald-400">Choose from disease cures, gene therapies, and breakthrough research</p>
         </div>
       </div>
     );
   }
+
+  const CategoryIcon = categoryIcons[template.category] || Dna;
+  const breakthrough = getBreakthroughPotential(template.id);
 
   return (
     <div className="h-full flex flex-col">
@@ -246,6 +376,7 @@ export default function PipelineRunner({ theme, template, onBack, onPipelineComp
               ← Back
             </Button>
             <Separator orientation="vertical" className="h-6" />
+            <CategoryIcon className="w-5 h-5 text-emerald-400" />
             <div>
               <h2 className="text-sm font-semibold">{template.name}</h2>
               <p className="text-xs text-gray-500">{template.category}</p>
@@ -266,6 +397,14 @@ export default function PipelineRunner({ theme, template, onBack, onPipelineComp
           </div>
         </div>
         <Progress value={instance.progress} className="h-1 mt-2" />
+        
+        {/* Breakthrough Banner */}
+        <div className="mt-2 p-2 bg-emerald-500/10 rounded border border-emerald-500/30">
+          <div className="flex items-center gap-1 text-emerald-400 text-xs font-medium">
+            <Award className="w-3 h-3" />
+            Breakthrough Potential: {breakthrough.breakthrough}
+          </div>
+        </div>
       </div>
 
       <div className="flex-1 flex overflow-hidden">
@@ -273,7 +412,7 @@ export default function PipelineRunner({ theme, template, onBack, onPipelineComp
         <div className="flex-1 border-r border-[#30363d] flex flex-col">
           {/* Parameters */}
           <div className="p-3 border-b border-[#30363d]">
-            <h3 className="text-xs font-semibold text-gray-500 uppercase mb-2">Parameters</h3>
+            <h3 className="text-xs font-semibold text-gray-500 uppercase mb-2">Configuration</h3>
             <div className="grid grid-cols-2 gap-2">
               {template.parameters.map(param => (
                 <div key={param.id} className="space-y-1">
@@ -378,7 +517,7 @@ export default function PipelineRunner({ theme, template, onBack, onPipelineComp
             {instance.status !== 'running' && instance.status !== 'completed' && (
               <Button className="flex-1 bg-emerald-600 hover:bg-emerald-700" onClick={runPipeline}>
                 <Play className="w-4 h-4 mr-2" />
-                Run Pipeline
+                Run Experiment
               </Button>
             )}
             {instance.status === 'running' && (
@@ -397,7 +536,7 @@ export default function PipelineRunner({ theme, template, onBack, onPipelineComp
         </div>
 
         {/* Logs & Results Panel */}
-        <div className="w-80 flex flex-col">
+        <div className="w-96 flex flex-col">
           <Tabs defaultValue="logs" className="h-full flex flex-col">
             <div className="flex border-b border-[#30363d]">
               <TabsList className="bg-transparent flex-1">
@@ -447,51 +586,32 @@ export default function PipelineRunner({ theme, template, onBack, onPipelineComp
                       <p className="text-xs text-gray-300">{instance.results.summary}</p>
                     </div>
                     
-                    {/* Metrics */}
+                    {/* Key Metrics */}
                     <div>
-                      <h4 className="text-sm font-medium mb-2">Performance Metrics</h4>
+                      <h4 className="text-sm font-medium mb-2">Key Metrics</h4>
                       <div className="grid grid-cols-2 gap-2">
-                        {Object.entries(instance.results.metrics).map(([key, value]) => (
+                        {Object.entries(instance.results.metrics).slice(0, 6).map(([key, value]) => (
                           <div key={key} className="p-2 bg-[#161b22] rounded text-center">
                             <div className="text-lg font-bold text-blue-400">
-                              {typeof value === 'number' ? value.toFixed(2) : value}
+                              {typeof value === 'number' ? (value < 1 ? `${(value * 100).toFixed(1)}%` : value.toFixed(1)) : value}
                             </div>
-                            <div className="text-xs text-gray-500">{key}</div>
+                            <div className="text-[10px] text-gray-500">{key.replace(/([A-Z])/g, ' $1').trim()}</div>
                           </div>
                         ))}
                       </div>
                     </div>
                     
-                    {/* Translation Results */}
+                    {/* Interpretation */}
                     <div>
-                      <h4 className="text-sm font-medium mb-2">Basketball → Biotech Translation</h4>
-                      <div className="space-y-2">
-                        {Object.entries(instance.results.basketballStats).map(([key, value]) => {
-                          const biotechKey = Object.keys(instance.results!.biotechEquivalents)[
-                            Object.keys(instance.results!.basketballStats).indexOf(key)
-                          ];
-                          const biotechValue = instance.results!.biotechEquivalents[biotechKey];
-                          
-                          return (
-                            <div key={key} className="flex items-center gap-2 p-2 bg-[#161b22] rounded">
-                              <div className="flex-1">
-                                <div className="text-xs text-orange-400">{key}</div>
-                                <div className="font-mono">{typeof value === 'number' ? value.toFixed(1) : value}</div>
-                              </div>
-                              <ArrowRight className="w-4 h-4 text-gray-500" />
-                              <div className="flex-1 text-right">
-                                <div className="text-xs text-emerald-400">{biotechKey}</div>
-                                <div className="font-mono">{typeof biotechValue === 'number' ? biotechValue.toFixed(1) : biotechValue}</div>
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
+                      <h4 className="text-sm font-medium mb-2">Scientific Interpretation</h4>
+                      <p className="text-xs text-gray-300 bg-[#161b22] p-3 rounded">
+                        {instance.results.interpretation}
+                      </p>
                     </div>
                     
                     {/* Recommendations */}
                     <div>
-                      <h4 className="text-sm font-medium mb-2">Recommendations</h4>
+                      <h4 className="text-sm font-medium mb-2">Next Steps</h4>
                       <ul className="space-y-1">
                         {instance.results.recommendations.map((rec, i) => (
                           <li key={i} className="text-xs text-gray-300 flex gap-2">
@@ -500,6 +620,19 @@ export default function PipelineRunner({ theme, template, onBack, onPipelineComp
                           </li>
                         ))}
                       </ul>
+                    </div>
+                    
+                    {/* Breakthrough Impact */}
+                    <div className="p-3 bg-purple-500/10 rounded-lg border border-purple-500/30">
+                      <h4 className="text-sm font-medium text-purple-400 mb-2 flex items-center gap-1">
+                        <Award className="w-3 h-3" />
+                        Breakthrough Impact
+                      </h4>
+                      <p className="text-xs text-gray-300 mb-2">{breakthrough.impact}</p>
+                      <p className="text-xs text-purple-300">
+                        <Clock className="w-3 h-3 inline mr-1" />
+                        Timeline: {breakthrough.timeline}
+                      </p>
                     </div>
                   </div>
                 ) : (
@@ -517,7 +650,7 @@ export default function PipelineRunner({ theme, template, onBack, onPipelineComp
   );
 }
 
-// Simple Tabs component for this file
+// Simple Tabs component
 function Tabs({ defaultValue, children, className }: { defaultValue: string; children: React.ReactNode; className?: string }) {
   const [value, setValue] = useState(defaultValue);
   return (

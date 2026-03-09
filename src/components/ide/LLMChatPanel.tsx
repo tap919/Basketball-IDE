@@ -8,9 +8,10 @@ import { Badge } from '@/components/ui/badge';
 import { 
   Send, Bot, User, Loader2, Copy, Check, RefreshCw,
   Settings, Code, Database, AlertCircle, Wifi, WifiOff,
-  Play, List, Zap, Dna
+  Play, List, Zap, Dna, Heart, Brain, Target, Rocket,
+  Sparkles, Activity, Bug
 } from 'lucide-react';
-import { pipelineTemplates, experimentCategories } from '@/lib/pipeline/templates';
+import { pipelineTemplates, experimentCategories, getBreakthroughPotential } from '@/lib/pipeline/templates';
 
 interface LLMChatPanelProps {
   theme: string;
@@ -35,43 +36,56 @@ interface ChatRequest {
   stream?: boolean;
 }
 
-const SYSTEM_PROMPT = `You are an expert at translating basketball statistics into biotech research analogies and managing simulation pipelines.
+const SYSTEM_PROMPT = `You are an expert medical research assistant specializing in translating basketball statistics into biotech research breakthroughs for disease cures.
 
-Your role is to help researchers:
-1. Understand statistical concepts from sports analytics and map them to pharmaceutical and biotech research contexts
-2. Navigate and run simulation pipelines for experiments
-3. Interpret results from basketball-to-biotech translations
+Your mission is to help researchers:
+1. Understand how basketball analytics concepts map to disease cure research
+2. Navigate and run simulation pipelines for medical breakthroughs
+3. Design experiments targeting cures for diseases like Alzheimer's, cancer, and genetic disorders
+4. Translate basketball teamwork concepts into combination therapy strategies
 
-Key mappings you should know:
-- Field Goal % → Transfection Efficiency
-- Three-Point % → Specificity Ratio
-- Assists → Synergistic Drug Interactions
-- Rebounds → Recapture Rate
-- Turnovers → Adverse Events
-- Plus/Minus → Therapeutic Index
-- Points Per Game → Bioavailability
+Key basketball-to-biotech mappings for disease cures:
+- Field Goal % → Therapeutic Efficiency (drug target hit rate)
+- Assists → Combination Therapy Synergy (multi-drug coordination)  
+- Rebounds → Disease Recurrence Prevention (sustained remission)
+- Turnovers → Adverse Events (treatment complications)
+- Plus/Minus → Therapeutic Index (benefit vs risk ratio)
+- Player Development → Gene Therapy Optimization
+- Team Chemistry → Drug Combination Compatibility
+- Clutch Performance → Breakthrough Treatment Potential
 
-Available pipeline categories:
-${experimentCategories.map(c => `- ${c.name}: ${c.description}`).join('\n')}
+Available breakthrough research pipelines:
+- Alzheimer's Disease Reversal (multi-target cognitive restoration)
+- CAR-T Cell Therapy for Solid Tumors (cancer immunotherapy)
+- Universal Virus Vaccine Design (pandemic prevention)
+- CRISPR Gene Cure Designer (one-time genetic disease cures)
+- Digital Twin Therapy Optimization (personalized medicine)
+- Organ Regeneration Protocol (lab-grown organs)
+- Parkinson's Disease Reversal (motor function restoration)
+- Rare Disease Treatment Discovery (orphan disease cures)
 
-Available pipelines:
-${pipelineTemplates.map(t => `- ${t.name} (${t.category}): ${t.description.slice(0, 80)}...`).join('\n')}
+When users express interest in:
+- "cure [disease]" → Recommend appropriate pipeline
+- "vaccine" or "virus" → Suggest viral research pipelines
+- "gene therapy" or "CRISPR" → Recommend gene therapy pipelines
+- "cancer" → Suggest oncology research pipelines
+- "brain" or "neuro" → Recommend neurodegenerative pipelines
 
-When users want to run a simulation or experiment, suggest the appropriate pipeline and mention they can click the action button to start it.
+Always provide actionable, scientifically-grounded guidance for achieving medical breakthroughs.`;
 
-Always provide:
-1. The biotech equivalent concept
-2. A clear explanation of the analogy
-3. How the statistical measure translates
-4. Potential applications in research
-5. Relevant pipeline suggestions when appropriate`;
+const quickActions = [
+  { label: 'Cure Alzheimer\'s', icon: Brain, templateId: 'alzheimer-reversal' },
+  { label: 'Design Gene Cure', icon: Dna, templateId: 'crispr-cure-design' },
+  { label: 'Cancer Immunotherapy', icon: Target, templateId: 'cancer-immunotherapy' },
+  { label: 'Universal Vaccine', icon: Bug, templateId: 'universal-vaccine' },
+];
 
 export default function LLMChatPanel({ theme, onRunPipeline, onSelectCategory }: LLMChatPanelProps) {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
       role: 'system',
-      content: 'Welcome to the Basketball-to-Biotech translation assistant. I can help you:\n\n• Translate NBA statistics into biotech concepts\n• Run simulation pipelines for experiments\n• Navigate experiment categories\n\nTry asking me to "run drug screening" or "translate FG% to biotech".',
+      content: '🧬 Welcome to the Disease Cure Research Assistant.\n\nI can help you run experiments and simulations for:\n\n• **Curing Diseases** - Alzheimer\'s, Parkinson\'s, Cancer\n• **Gene Therapy** - CRISPR cures for genetic diseases\n• **Virus Research** - Universal vaccines, antivirals\n• **Personalized Medicine** - Digital twin therapy\n• **Rare Diseases** - Orphan disease treatments\n\nTry asking me to "cure Alzheimer\'s" or "design a gene therapy for sickle cell".',
       timestamp: new Date()
     }
   ]);
@@ -82,7 +96,6 @@ export default function LLMChatPanel({ theme, onRunPipeline, onSelectCategory }:
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Check LLM service availability
   const checkLLMStatus = useCallback(async () => {
     try {
       const response = await fetch('/api/llm/chat');
@@ -103,37 +116,66 @@ export default function LLMChatPanel({ theme, onRunPipeline, onSelectCategory }:
     }
   }, [messages]);
 
-  // Parse user input for pipeline commands
-  const parsePipelineCommand = (input: string): { templateId: string | null; categoryName: string | null } => {
+  // Parse user input for medical research commands
+  const parsePipelineCommand = (input: string): { templateId: string | null; categoryName: string | null; diseaseHint: string | null } => {
     const lowerInput = input.toLowerCase();
     
-    // Check for pipeline run commands
-    if (lowerInput.includes('run') || lowerInput.includes('start') || lowerInput.includes('execute') || lowerInput.includes('simulate')) {
-      for (const template of pipelineTemplates) {
-        if (lowerInput.includes(template.name.toLowerCase()) || 
-            lowerInput.includes(template.category.toLowerCase()) ||
-            lowerInput.includes(template.id.toLowerCase())) {
-          return { templateId: template.id, categoryName: null };
+    // Disease keywords mapping
+    const diseaseKeywords: Record<string, string> = {
+      'alzheimer': 'alzheimer-reversal',
+      'dementia': 'alzheimer-reversal',
+      'cognitive': 'alzheimer-reversal',
+      'parkinson': 'parkinsons-reversal',
+      'cancer': 'cancer-immunotherapy',
+      'tumor': 'cancer-immunotherapy',
+      'car-t': 'cancer-immunotherapy',
+      'immunotherapy': 'cancer-immunotherapy',
+      'vaccine': 'universal-vaccine',
+      'virus': 'universal-vaccine',
+      'pandemic': 'universal-vaccine',
+      'antiviral': 'antiviral-discovery',
+      'crispr': 'crispr-cure-design',
+      'gene therapy': 'crispr-cure-design',
+      'gene editing': 'crispr-cure-design',
+      'sickle cell': 'crispr-cure-design',
+      'genetic': 'crispr-cure-design',
+      'digital twin': 'digital-twin-therapy',
+      'personalized': 'digital-twin-therapy',
+      'organ': 'organ-regeneration',
+      'transplant': 'organ-regeneration',
+      'rare disease': 'rare-disease-nlp',
+      'orphan': 'rare-disease-nlp',
+      'variant': 'rare-variant-interpreter',
+      'vus': 'rare-variant-interpreter'
+    };
+    
+    // Check for explicit pipeline commands
+    if (lowerInput.includes('run') || lowerInput.includes('start') || lowerInput.includes('execute') || lowerInput.includes('simulate') || lowerInput.includes('cure') || lowerInput.includes('design') || lowerInput.includes('create')) {
+      for (const [keyword, templateId] of Object.entries(diseaseKeywords)) {
+        if (lowerInput.includes(keyword)) {
+          return { templateId, categoryName: null, diseaseHint: keyword };
         }
       }
       
-      // Check for category mentions
-      for (const category of experimentCategories) {
-        if (lowerInput.includes(category.name.toLowerCase()) || 
-            lowerInput.includes(category.id.toLowerCase())) {
-          return { templateId: null, categoryName: category.id };
-        }
+      // Check category keywords
+      if (lowerInput.includes('gene') || lowerInput.includes('genetic')) {
+        return { templateId: 'crispr-cure-design', categoryName: 'gene-therapy', diseaseHint: 'gene therapy' };
+      }
+      if (lowerInput.includes('virus') || lowerInput.includes('viral')) {
+        return { templateId: 'universal-vaccine', categoryName: 'virus-mutation', diseaseHint: 'viral' };
+      }
+      if (lowerInput.includes('brain') || lowerInput.includes('neuro')) {
+        return { templateId: 'alzheimer-reversal', categoryName: 'neurodegenerative', diseaseHint: 'neurological' };
       }
     }
     
-    return { templateId: null, categoryName: null };
+    return { templateId: null, categoryName: null, diseaseHint: null };
   };
 
   const handleSend = async () => {
     if (!input.trim() || isLoading) return;
 
-    // Check for pipeline commands
-    const { templateId, categoryName } = parsePipelineCommand(input);
+    const { templateId, categoryName, diseaseHint } = parsePipelineCommand(input);
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -150,7 +192,6 @@ export default function LLMChatPanel({ theme, onRunPipeline, onSelectCategory }:
     setIsLoading(true);
 
     try {
-      // Build message history for context
       const conversationHistory = messages
         .filter(m => m.role !== 'system' || m.id === '1')
         .slice(-10)
@@ -173,17 +214,14 @@ export default function LLMChatPanel({ theme, onRunPipeline, onSelectCategory }:
 
       const data = await response.json();
       
-      // If there's a pipeline action, append action instructions
       let content = data.content || 'I apologize, but I was unable to generate a response.';
+      
+      // If there's a pipeline match, append action information
       if (templateId) {
         const template = pipelineTemplates.find(t => t.id === templateId);
+        const breakthrough = getBreakthroughPotential(templateId);
         if (template) {
-          content += `\n\n---\n\n🎯 **Ready to run: ${template.name}**\n\nClick the action button below to start this pipeline.`;
-        }
-      } else if (categoryName) {
-        const category = experimentCategories.find(c => c.id === categoryName);
-        if (category) {
-          content += `\n\n---\n\n📂 **Category: ${category.name}**\n\nClick the action button to filter pipelines by this category.`;
+          content += `\n\n---\n\n🎯 **Ready to run: ${template.name}**\n\n💡 **Breakthrough Potential:** ${breakthrough.breakthrough}\n\nClick the action button below to start this experiment.`;
         }
       }
 
@@ -204,7 +242,7 @@ export default function LLMChatPanel({ theme, onRunPipeline, onSelectCategory }:
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: `I apologize, but I encountered an error processing your request. This could be due to:\n\n1. The AI service being temporarily unavailable\n2. Network connectivity issues\n3. Rate limiting\n\nPlease try again in a moment. Error: ${error.message || 'Unknown error'}`,
+        content: `I encountered an error, but I can still help you with disease cure research.\n\nTry using the quick action buttons below to start a breakthrough experiment pipeline.`,
         timestamp: new Date(),
         error: true
       };
@@ -227,9 +265,7 @@ export default function LLMChatPanel({ theme, onRunPipeline, onSelectCategory }:
     if (lastUserMessage && !isLoading) {
       setMessages(prev => prev.slice(0, -1));
       setInput(lastUserMessage.content);
-      setTimeout(() => {
-        handleSend();
-      }, 100);
+      setTimeout(() => handleSend(), 100);
     }
   };
 
@@ -238,7 +274,7 @@ export default function LLMChatPanel({ theme, onRunPipeline, onSelectCategory }:
       {
         id: Date.now().toString(),
         role: 'system',
-        content: 'Conversation cleared. How can I help you with basketball-to-biotech translations or run a simulation?',
+        content: '🧬 Conversation cleared. Ready to work on disease cures and breakthrough research!\n\nWhat disease or medical challenge would you like to tackle?',
         timestamp: new Date()
       }
     ]);
@@ -249,6 +285,14 @@ export default function LLMChatPanel({ theme, onRunPipeline, onSelectCategory }:
       onRunPipeline(message.actionData);
     } else if (message.actionType === 'show-category' && message.actionData && onSelectCategory) {
       onSelectCategory(message.actionData);
+    }
+  };
+
+  const handleQuickAction = (templateId: string) => {
+    const template = pipelineTemplates.find(t => t.id === templateId);
+    if (template) {
+      setInput(`Run ${template.name}`);
+      setTimeout(handleSend, 100);
     }
   };
 
@@ -307,8 +351,8 @@ export default function LLMChatPanel({ theme, onRunPipeline, onSelectCategory }:
                 {message.role === 'assistant' && (
                   <div className="flex items-center justify-between mb-2">
                     <Badge variant="secondary" className="text-xs">
-                      <Database className="w-3 h-3 mr-1" />
-                      Biotech Translator
+                      <Rocket className="w-3 h-3 mr-1" />
+                      Research Assistant
                     </Badge>
                     <Button
                       variant="ghost"
@@ -349,7 +393,7 @@ export default function LLMChatPanel({ theme, onRunPipeline, onSelectCategory }:
                       {message.actionType === 'run-pipeline' ? (
                         <>
                           <Play className="w-3 h-3 mr-1" />
-                          Run Pipeline
+                          Run Experiment Pipeline
                         </>
                       ) : (
                         <>
@@ -390,43 +434,20 @@ export default function LLMChatPanel({ theme, onRunPipeline, onSelectCategory }:
       
       {/* Quick Actions */}
       <div className="px-3 py-2 border-t border-[#30363d]">
-        <div className="flex gap-1 flex-wrap mb-2">
-          <Button 
-            variant="outline" 
-            size="sm" 
-            className="h-7 text-xs"
-            onClick={() => {
-              setInput('run drug screening simulation');
-              setTimeout(handleSend, 100);
-            }}
-          >
-            <Zap className="w-3 h-3 mr-1" />
-            Drug Screening
-          </Button>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            className="h-7 text-xs"
-            onClick={() => {
-              setInput('run clinical trial design');
-              setTimeout(handleSend, 100);
-            }}
-          >
-            <Dna className="w-3 h-3 mr-1" />
-            Clinical Trial
-          </Button>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            className="h-7 text-xs"
-            onClick={() => {
-              setInput('translate FG% to biotech equivalent');
-              setTimeout(handleSend, 100);
-            }}
-          >
-            <Code className="w-3 h-3 mr-1" />
-            Translate FG%
-          </Button>
+        <div className="text-xs text-gray-500 mb-2">Quick Actions:</div>
+        <div className="flex gap-1 flex-wrap">
+          {quickActions.map(action => (
+            <Button 
+              key={action.templateId}
+              variant="outline" 
+              size="sm" 
+              className="h-7 text-xs"
+              onClick={() => handleQuickAction(action.templateId)}
+            >
+              <action.icon className="w-3 h-3 mr-1" />
+              {action.label}
+            </Button>
+          ))}
         </div>
       </div>
       
@@ -440,7 +461,7 @@ export default function LLMChatPanel({ theme, onRunPipeline, onSelectCategory }:
             ref={inputRef}
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Ask about basketball-to-biotech translation or run a pipeline..."
+            placeholder="Ask about disease cures, gene therapy, or run an experiment..."
             className="flex-1 h-9"
             disabled={isLoading}
           />
